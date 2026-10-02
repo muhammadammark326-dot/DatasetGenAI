@@ -114,11 +114,22 @@ Return ONLY valid JSON matching this schema:
                 blueprint_dict["difficulty_distribution"][last_k] + diff, 4
             )
 
-        # Assign validation rules if domain is physics
-        if domain == "physics" and "physics_numeric" not in blueprint_dict.get("validation_rules", []):
-            rules = blueprint_dict.get("validation_rules", [])
+        # Assign validation rules according to domain and task_type
+        rules = list(blueprint_dict.get("validation_rules", ["schema", "dedup"]))
+        if domain == "physics" and "physics_numeric" not in rules:
             rules.append("physics_numeric")
-            blueprint_dict["validation_rules"] = list(set(rules))
+        elif domain == "mathematics" and "math_symbolic" not in rules:
+            rules.append("math_symbolic")
+        elif task_type == "classification" and "classification" not in rules:
+            rules.append("classification")
+        elif task_type in ("coding", "code_generation") and "code_sandbox" not in rules:
+            rules.append("code_sandbox")
+        elif task_type in ("context_qa", "reading_comprehension") and "context_qa" not in rules:
+            rules.append("context_qa")
+        elif task_type == "json_extraction" and "json_extraction" not in rules:
+            rules.append("json_extraction")
+
+        blueprint_dict["validation_rules"] = list(dict.fromkeys(rules))
 
         return Blueprint.model_validate(blueprint_dict)
 
