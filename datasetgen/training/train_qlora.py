@@ -14,7 +14,7 @@ from datasetgen.config.settings import get_settings
 
 def run_qlora_training(
     model_id: str = "Qwen/Qwen2.5-1.5B-Instruct",
-    epochs: int = 3,
+    epochs: int = 1,
     batch_size: int = 4,
     learning_rate: float = 2e-4,
     max_seq_length: int = 1024,
@@ -49,22 +49,30 @@ def run_qlora_training(
         )
         from trl import SFTTrainer
     except ImportError:
-        print("\n[!] ML dependencies not installed on this machine.")
-        print("[!] This script is designed to run in Google Colab with GPU.")
-        print("[!] Install Colab requirements: pip install -r requirements-colab.txt\n")
-        return
+        print("\n[!] Installing missing ML dependencies...")
+        os.system("pip install -q trl peft bitsandbytes accelerate datasets")
+        import torch
+        from datasets import load_dataset
+        from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
+        from transformers import (
+            AutoModelForCausalLM,
+            AutoTokenizer,
+            BitsAndBytesConfig,
+            TrainingArguments,
+        )
+        from trl import SFTTrainer
 
-    # Check CUDA
+    # Check CUDA and BF16 support (A100 has native BF16!)
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"Using compute device: {device}")
-    if device == "cpu":
-        print("[!] Warning: Running QLoRA on CPU is extremely slow. Switch to a Colab T4/A100 GPU.")
+    use_bf16 = (device == "cuda" and torch.cuda.is_bf16_supported())
+    use_fp16 = (device == "cuda" and not use_bf16)
+    print(f"Using compute device: {device} (bf16={use_bf16}, fp16={use_fp16})")
 
     # 1. 4-bit Quantization Config
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
         bnb_4bit_quant_type="nf4",
-        bnb_4bit_compute_dtype=torch.float16,
+        bnb_4bit_compute_dtype=torch.bfloat16 if use_bf16 else torch.float16,
         bnb_4bit_use_double_quant=True,
     ) if device == "cuda" else None
 
@@ -77,7 +85,7 @@ def run_qlora_training(
     model = AutoModelForCausalLM.from_pretrained(
         model_id,
         trust_remote_code=True,
-        torch_dtype=torch.float16 if device == "cuda" else torch.float32,
+        torch_dtype=torch.bfloat16 if use_bf16 else (torch.float16 if device == "cuda" else torch.float32),
         **model_kwargs,
     )
 
@@ -105,18 +113,23 @@ def run_qlora_training(
         return formatted
 
     # 5. Training Arguments
-    training_args = TrainingArguments(
-        output_dir=str(output_dir),
-        num_train_epochs=epochs,
-        per_device_train_batch_size=batch_size,
-        gradient_accumulation_steps=4,
-        learning_rate=learning_rate,
-        logging_steps=10,
-        save_strategy="epoch",
-        evaluation_strategy="epoch",
-        fp16=(device == "cuda"),
-        report_to="none",
-    )
+    training_kwargs = {
+        "output_dir": str(output_dir),
+        "num_train_epochs": epochs,
+        "per_device_train_batch_size": batch_size,
+        "gradient_accumulation_steps": 2,
+        "learning_rate": learning_rate,
+        "logging_steps": 10,
+        "save_strategy": "epoch",
+        "bf16": use_bf16,
+        "fp16": use_fp16,
+        "report_to": "none",
+    }
+    # Check for eval_strategy vs evaluation_strategy
+    try:
+        training_args = TrainingArguments(eval_strategy="epoch", **training_kwargs)
+    except TypeError:
+        training_args = TrainingArguments(evaluation_strategy="epoch", **training_kwargs)
 
     trainer = SFTTrainer(
         model=model,
@@ -129,18 +142,19 @@ def run_qlora_training(
         args=training_args,
     )
 
-    print("\n--- Initiating Training Loop ---")
+    print("\n--- Initiating Training Loop on GPU ---")
     trainer.train()
 
-    print(f"\n[OK] Training complete. Saving LoRA adapter to {output_dir}")
+    print(f"\n[OK] Training complete! Saving LoRA adapter to {output_dir}")
     trainer.model.save_pretrained(output_dir)
     tokenizer.save_pretrained(output_dir)
+    print("Your fine-tuned DatasetGen model is saved and ready!")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="DatasetGen AI QLoRA Training Runner")
     parser.add_argument("--model", default="Qwen/Qwen2.5-1.5B-Instruct", help="Base model Hugging Face ID")
-    parser.add_argument("--epochs", type=int, default=3, help="Number of training epochs")
+    parser.add_argument("--epochs", type=int, default=1, help="Number of training epochs")
     parser.add_argument("--batch-size", type=int, default=4, help="Per device batch size")
     args = parser.parse_args()
 
