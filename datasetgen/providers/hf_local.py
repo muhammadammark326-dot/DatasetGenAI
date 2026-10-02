@@ -54,8 +54,14 @@ class HuggingFaceLocalProvider(LLMProvider):
 
         model_kwargs: Dict[str, Any] = {
             "trust_remote_code": True,
-            "device_map": self.device_map,
         }
+
+        try:
+            import accelerate
+            if self.device_map and torch.cuda.is_available():
+                model_kwargs["device_map"] = self.device_map
+        except ImportError:
+            pass
 
         if torch.cuda.is_available():
             if self.load_in_4bit:
