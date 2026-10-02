@@ -38,6 +38,10 @@ def merge_lora_to_standalone(
         trust_remote_code=True,
     )
 
+    from datasetgen.training.compatibility import patch_torchao_compat
+
+    patch_torchao_compat()
+
     logger.info("Applying LoRA adapter from %s...", adapter_path)
     peft_model = PeftModel.from_pretrained(base_model, adapter_path)
 

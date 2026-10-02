@@ -83,6 +83,8 @@ class HuggingFaceLocalProvider(LLMProvider):
         if self.adapter_path:
             logger.info("Loading fine-tuned LoRA adapter from %s...", self.adapter_path)
             try:
+                from datasetgen.training.compatibility import patch_torchao_compat
+                patch_torchao_compat()
                 from peft import PeftModel
 
                 self._model = PeftModel.from_pretrained(base_model, self.adapter_path)

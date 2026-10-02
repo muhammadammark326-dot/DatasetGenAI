@@ -28,6 +28,8 @@ def run_dpo_training(
     """Execute DPO training on Hugging Face transformers/TRL."""
     import torch
     from datasets import load_dataset
+    from datasetgen.training.compatibility import patch_torchao_compat
+    patch_torchao_compat()
     from peft import LoraConfig, PeftModel, get_peft_model, prepare_model_for_kbit_training
     from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
     from trl import DPOConfig, DPOTrainer

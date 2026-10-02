@@ -53,6 +53,9 @@ def run_qlora_training(
     print(f"Reading SFT data from: {data_dir}")
     print(f"Checkpoints will be saved to: {output_dir}")
 
+    from datasetgen.training.compatibility import patch_torchao_compat
+    patch_torchao_compat()
+
     try:
         import torch
         from datasets import load_dataset
