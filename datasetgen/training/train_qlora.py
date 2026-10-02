@@ -25,7 +25,7 @@ def run_qlora_training(
     train_file = data_dir / "train_sft.jsonl"
     val_file = data_dir / "val_sft.jsonl"
 
-    # Smart auto-detection of SFT training data across Colab environments
+    # Auto-detect SFT dataset location across possible Colab working directories
     if not train_file.exists():
         candidate_dirs = [
             Path("/content/data/sft_data"),
@@ -76,7 +76,6 @@ def run_qlora_training(
         )
         from trl import SFTConfig, SFTTrainer
 
-    # Check CUDA and BF16 support (A100 has native BF16!)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     use_bf16 = (device == "cuda" and torch.cuda.is_bf16_supported())
     use_fp16 = (device == "cuda" and not use_bf16)
@@ -116,17 +115,20 @@ def run_qlora_training(
         task_type="CAUSAL_LM",
     )
 
-    # 4. Load SFT Dataset
-    dataset = load_dataset("json", data_files={"train": str(train_file), "validation": str(val_file)})
+    # 4. Load & Pre-format Dataset into explicit string text column
+    raw_dataset = load_dataset("json", data_files={"train": str(train_file), "validation": str(val_file)})
 
-    def format_prompts(batch):
-        formatted = []
-        for inst, resp in zip(batch["instruction"], batch["response"]):
-            text = f"<|im_start|>user\n{inst}<|im_end|>\n<|im_start|>assistant\n{resp}<|im_end|>"
-            formatted.append(text)
-        return formatted
+    eos_token = tokenizer.eos_token or "<|im_end|>"
 
-    # 5. SFTConfig compatible with both newest TRL (max_length) and older (max_seq_length)
+    def format_row(row: dict) -> dict:
+        inst = row.get("instruction", "")
+        resp = row.get("response", "")
+        text = f"<|im_start|>user\n{inst}<|im_end|>\n<|im_start|>assistant\n{resp}{eos_token}"
+        return {"text": text}
+
+    dataset = raw_dataset.map(format_row, desc="Formatting SFT text rows")
+
+    # 5. Training Arguments
     config_params = {
         "output_dir": str(output_dir),
         "num_train_epochs": epochs,
@@ -138,6 +140,7 @@ def run_qlora_training(
         "bf16": use_bf16,
         "fp16": use_fp16,
         "report_to": "none",
+        "dataset_text_field": "text",
     }
 
     try:
@@ -145,14 +148,13 @@ def run_qlora_training(
     except TypeError:
         sft_config = SFTConfig(max_seq_length=max_seq_length, **config_params)
 
-    # SFTTrainer compatible with both newest TRL (processing_class) and older (tokenizer)
+    # Instantiate Trainer without formatting_func since dataset already has text strings
     try:
         trainer = SFTTrainer(
             model=model,
             train_dataset=dataset["train"],
             eval_dataset=dataset["validation"],
             peft_config=peft_config,
-            formatting_func=format_prompts,
             processing_class=tokenizer,
             args=sft_config,
         )
@@ -162,7 +164,6 @@ def run_qlora_training(
             train_dataset=dataset["train"],
             eval_dataset=dataset["validation"],
             peft_config=peft_config,
-            formatting_func=format_prompts,
             tokenizer=tokenizer,
             args=sft_config,
         )
