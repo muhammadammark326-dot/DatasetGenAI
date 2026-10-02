@@ -112,35 +112,70 @@ def run_qlora_training(
             formatted.append(text)
         return formatted
 
-    # 5. Training Arguments
-    training_kwargs = {
-        "output_dir": str(output_dir),
-        "num_train_epochs": epochs,
-        "per_device_train_batch_size": batch_size,
-        "gradient_accumulation_steps": 2,
-        "learning_rate": learning_rate,
-        "logging_steps": 10,
-        "save_strategy": "epoch",
-        "bf16": use_bf16,
-        "fp16": use_fp16,
-        "report_to": "none",
-    }
-    # Check for eval_strategy vs evaluation_strategy
+    # 5. Training Arguments & SFTTrainer instantiation
+    trainer = None
     try:
-        training_args = TrainingArguments(eval_strategy="epoch", **training_kwargs)
-    except TypeError:
-        training_args = TrainingArguments(evaluation_strategy="epoch", **training_kwargs)
+        from trl import SFTConfig
+        sft_config = SFTConfig(
+            output_dir=str(output_dir),
+            num_train_epochs=epochs,
+            per_device_train_batch_size=batch_size,
+            gradient_accumulation_steps=2,
+            learning_rate=learning_rate,
+            logging_steps=10,
+            save_strategy="epoch",
+            bf16=use_bf16,
+            fp16=use_fp16,
+            report_to="none",
+            max_seq_length=max_seq_length,
+        )
+        try:
+            trainer = SFTTrainer(
+                model=model,
+                train_dataset=dataset["train"],
+                eval_dataset=dataset["validation"],
+                peft_config=peft_config,
+                formatting_func=format_prompts,
+                processing_class=tokenizer,
+                args=sft_config,
+            )
+        except TypeError:
+            trainer = SFTTrainer(
+                model=model,
+                train_dataset=dataset["train"],
+                eval_dataset=dataset["validation"],
+                peft_config=peft_config,
+                formatting_func=format_prompts,
+                tokenizer=tokenizer,
+                args=sft_config,
+            )
+    except (ImportError, TypeError):
+        training_kwargs = {
+            "output_dir": str(output_dir),
+            "num_train_epochs": epochs,
+            "per_device_train_batch_size": batch_size,
+            "gradient_accumulation_steps": 2,
+            "learning_rate": learning_rate,
+            "logging_steps": 10,
+            "save_strategy": "epoch",
+            "bf16": use_bf16,
+            "fp16": use_fp16,
+            "report_to": "none",
+        }
+        try:
+            training_args = TrainingArguments(eval_strategy="epoch", **training_kwargs)
+        except TypeError:
+            training_args = TrainingArguments(evaluation_strategy="epoch", **training_kwargs)
 
-    trainer = SFTTrainer(
-        model=model,
-        train_dataset=dataset["train"],
-        eval_dataset=dataset["validation"],
-        peft_config=peft_config,
-        formatting_func=format_prompts,
-        max_seq_length=max_seq_length,
-        tokenizer=tokenizer,
-        args=training_args,
-    )
+        trainer = SFTTrainer(
+            model=model,
+            train_dataset=dataset["train"],
+            eval_dataset=dataset["validation"],
+            peft_config=peft_config,
+            formatting_func=format_prompts,
+            tokenizer=tokenizer,
+            args=training_args,
+        )
 
     print("\n--- Initiating Training Loop on GPU ---")
     trainer.train()
