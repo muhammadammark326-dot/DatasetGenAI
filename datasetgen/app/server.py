@@ -81,7 +81,7 @@ def run_generation(body: GenerateRequest) -> Dict[str, Any]:
         return {
             "dataset_name": body.blueprint.dataset_name,
             "accepted_count": len(accepted),
-            "report": report.model_dump(),
+            "report": report.to_dict(),
             "trace_id": trace.trace_id,
             "sample_examples": [ex.data for ex in accepted[:5]],
         }

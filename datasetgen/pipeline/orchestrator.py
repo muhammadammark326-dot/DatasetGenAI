@@ -46,6 +46,27 @@ class GenerationReport:
     def acceptance_rate(self) -> float:
         return (self.accepted / self.generated * 100) if self.generated > 0 else 0.0
 
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "requested": self.requested,
+            "generated": self.generated,
+            "accepted": self.accepted,
+            "rejected": self.rejected,
+            "duplicates": self.duplicates,
+            "domain_failures": self.domain_failures,
+            "schema_failures": self.schema_failures,
+            "constraint_failures": self.constraint_failures,
+            "semantic_failures": self.semantic_failures,
+            "regeneration_attempts": self.regeneration_attempts,
+            "acceptance_rate": self.acceptance_rate,
+            "tokens_used": self.tokens_used,
+            "estimated_cost": self.estimated_cost,
+            "duration_seconds": self.duration_seconds,
+        }
+
+    def model_dump(self) -> Dict[str, Any]:
+        return self.to_dict()
+
     def format_cli(self) -> str:
         lines = [
             "=" * 68,
