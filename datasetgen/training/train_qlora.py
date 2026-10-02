@@ -61,9 +61,8 @@ def run_qlora_training(
             AutoModelForCausalLM,
             AutoTokenizer,
             BitsAndBytesConfig,
-            TrainingArguments,
         )
-        from trl import SFTTrainer
+        from trl import SFTConfig, SFTTrainer
     except ImportError:
         print("\n[!] Installing missing ML dependencies...")
         os.system("pip install -q trl peft bitsandbytes accelerate datasets")
@@ -74,9 +73,8 @@ def run_qlora_training(
             AutoModelForCausalLM,
             AutoTokenizer,
             BitsAndBytesConfig,
-            TrainingArguments,
         )
-        from trl import SFTTrainer
+        from trl import SFTConfig, SFTTrainer
 
     # Check CUDA and BF16 support (A100 has native BF16!)
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -101,7 +99,7 @@ def run_qlora_training(
     model = AutoModelForCausalLM.from_pretrained(
         model_id,
         trust_remote_code=True,
-        torch_dtype=torch.bfloat16 if use_bf16 else (torch.float16 if device == "cuda" else torch.float32),
+        dtype=torch.bfloat16 if use_bf16 else (torch.float16 if device == "cuda" else torch.float32),
         **model_kwargs,
     )
 
@@ -128,61 +126,37 @@ def run_qlora_training(
             formatted.append(text)
         return formatted
 
-    # 5. Training Arguments & SFTTrainer instantiation
-    trainer = None
-    try:
-        from trl import SFTConfig
-        sft_config = SFTConfig(
-            output_dir=str(output_dir),
-            num_train_epochs=epochs,
-            per_device_train_batch_size=batch_size,
-            gradient_accumulation_steps=2,
-            learning_rate=learning_rate,
-            logging_steps=10,
-            save_strategy="epoch",
-            bf16=use_bf16,
-            fp16=use_fp16,
-            report_to="none",
-            max_seq_length=max_seq_length,
-        )
-        try:
-            trainer = SFTTrainer(
-                model=model,
-                train_dataset=dataset["train"],
-                eval_dataset=dataset["validation"],
-                peft_config=peft_config,
-                formatting_func=format_prompts,
-                processing_class=tokenizer,
-                args=sft_config,
-            )
-        except TypeError:
-            trainer = SFTTrainer(
-                model=model,
-                train_dataset=dataset["train"],
-                eval_dataset=dataset["validation"],
-                peft_config=peft_config,
-                formatting_func=format_prompts,
-                tokenizer=tokenizer,
-                args=sft_config,
-            )
-    except (ImportError, TypeError):
-        training_kwargs = {
-            "output_dir": str(output_dir),
-            "num_train_epochs": epochs,
-            "per_device_train_batch_size": batch_size,
-            "gradient_accumulation_steps": 2,
-            "learning_rate": learning_rate,
-            "logging_steps": 10,
-            "save_strategy": "epoch",
-            "bf16": use_bf16,
-            "fp16": use_fp16,
-            "report_to": "none",
-        }
-        try:
-            training_args = TrainingArguments(eval_strategy="epoch", **training_kwargs)
-        except TypeError:
-            training_args = TrainingArguments(evaluation_strategy="epoch", **training_kwargs)
+    # 5. SFTConfig compatible with both newest TRL (max_length) and older (max_seq_length)
+    config_params = {
+        "output_dir": str(output_dir),
+        "num_train_epochs": epochs,
+        "per_device_train_batch_size": batch_size,
+        "gradient_accumulation_steps": 2,
+        "learning_rate": learning_rate,
+        "logging_steps": 10,
+        "save_strategy": "epoch",
+        "bf16": use_bf16,
+        "fp16": use_fp16,
+        "report_to": "none",
+    }
 
+    try:
+        sft_config = SFTConfig(max_length=max_seq_length, **config_params)
+    except TypeError:
+        sft_config = SFTConfig(max_seq_length=max_seq_length, **config_params)
+
+    # SFTTrainer compatible with both newest TRL (processing_class) and older (tokenizer)
+    try:
+        trainer = SFTTrainer(
+            model=model,
+            train_dataset=dataset["train"],
+            eval_dataset=dataset["validation"],
+            peft_config=peft_config,
+            formatting_func=format_prompts,
+            processing_class=tokenizer,
+            args=sft_config,
+        )
+    except TypeError:
         trainer = SFTTrainer(
             model=model,
             train_dataset=dataset["train"],
@@ -190,7 +164,7 @@ def run_qlora_training(
             peft_config=peft_config,
             formatting_func=format_prompts,
             tokenizer=tokenizer,
-            args=training_args,
+            args=sft_config,
         )
 
     print("\n--- Initiating Training Loop on GPU ---")
