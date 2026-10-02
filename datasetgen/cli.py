@@ -225,6 +225,20 @@ def merge(
     console.print(f"[bold green][OK] Standalone merged model exported to:[/bold green] [cyan]{out_dir}[/cyan]\n")
 
 
+@app.command()
+def ui(
+    host: str = typer.Option("127.0.0.1", "--host", "-h", help="Host interface to bind"),
+    port: int = typer.Option(8000, "--port", "-p", help="Port number for UI server"),
+) -> None:
+    """Launch the DatasetGen AI Studio interactive web dashboard."""
+    import uvicorn
+
+    console.print(f"\n[bold blue]=== Starting DatasetGen AI Studio Web App ===[/bold blue]")
+    console.print(f"Server running at: [bold green]http://{host}:{port}[/bold green]\n")
+    uvicorn.run("app.api.server:app", host=host, port=port, reload=False)
+
+
 if __name__ == "__main__":
     app()
+
 

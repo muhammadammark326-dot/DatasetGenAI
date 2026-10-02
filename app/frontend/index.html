@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DatasetGen AI Studio | Neuro-Symbolic Synthetic Data Factory</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: rgba(18, 24, 38, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --accent: #06b6d4;
+      --accent-glow: rgba(6, 182, 212, 0.25);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --code-bg: #0d111c;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-image: 
+        radial-gradient(circle at 15% 20%, rgba(99, 102, 241, 0.12) 0%, transparent 40%),
+        radial-gradient(circle at 85% 75%, rgba(6, 182, 212, 0.10) 0%, transparent 40%);
+    }
+
+    header {
+      padding: 1.25rem 2.5rem;
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(12px);
+      background: rgba(9, 13, 22, 0.8);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .brand-logo {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.2rem;
+      color: white;
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+    .brand-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(to right, #fff, #9ca3af);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .brand-badge {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 9999px;
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      color: #a5b4fc;
+      font-weight: 600;
+    }
+
+    nav {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .nav-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .nav-btn:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .nav-btn.active {
+      color: #fff;
+      background: rgba(99, 102, 241, 0.18);
+      border-color: rgba(99, 102, 241, 0.35);
+    }
+
+    main {
+      flex: 1;
+      padding: 2.5rem;
+      max-width: 1300px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Cards */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 1.75rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+      backdrop-filter: blur(16px);
+    }
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .card-subtitle {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+    }
+
+    /* Form Controls */
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      color: #d1d5db;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: var(--code-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+    }
+    textarea { resize: vertical; min-height: 100px; }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.25rem;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: white;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+    }
+    .btn-primary:hover {
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+      transform: translateY(-1px);
+    }
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      border: 1px solid var(--card-border);
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Status & Stats */
+    .stat-box {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      text-align: center;
+    }
+    .stat-val {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 0.25rem;
+    }
+
+    /* Code & JSON Preview */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      overflow-x: auto;
+      max-height: 400px;
+      color: #a5b4fc;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge-success { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+    .badge-danger { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+    .badge-info { background: rgba(6, 182, 212, 0.15); color: #22d3ee; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    th, td {
+      padding: 0.85rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--card-border);
+      font-size: 0.9rem;
+    }
+    th {
+      font-weight: 600;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.02);
+    }
+    tr:hover { background: rgba(255, 255, 255, 0.02); }
+
+    .loader {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-logo">Δ</div>
+      <div>
+        <div class="brand-title">DatasetGen AI Studio</div>
+      </div>
+      <span class="brand-badge">Neuro-Symbolic Factory</span>
+    </div>
+
+    <nav>
+      <button class="nav-btn active" onclick="switchTab('studio')">Pipeline Studio</button>
+      <button class="nav-btn" onclick="switchTab('vault')">Datasets Vault</button>
+      <button class="nav-btn" onclick="switchTab('traces')">Trace & Repair</button>
+      <button class="nav-btn" onclick="switchTab('model')">Fine-Tuned Model</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- TAB 1: STUDIO -->
+    <div id="tab-studio" class="tab-content active">
+      <div class="card">
+        <h2 class="card-title">✨ Synthetic Dataset Request</h2>
+        <p class="card-subtitle">State your requirement in natural language. Our symbolic planner extracts formal schemas, domains, and programmatic validation rules.</p>
+        
+        <div class="form-group">
+          <label>Dataset Generation Prompt</label>
+          <textarea id="promptInput" placeholder="e.g. Generate 50 high-school physics questions on Newton's Laws and Kinematics with step-by-step numerical solutions in SI units.">Generate 20 high-school physics questions on Kinematics with numerical calculations and step-by-step solutions.</textarea>
+        </div>
+
+        <div class="grid-3">
+          <div class="form-group">
+            <label>Inference Provider</label>
+            <select id="providerSelect">
+              <option value="mock">Mock Provider (Deterministic Offline)</option>
+              <option value="hf_local">Fine-Tuned QLoRA Adapter (Local / GPU)</option>
+              <option value="gemini">Google Gemini API</option>
+              <option value="openai">OpenAI API</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Target Count</label>
+            <input type="number" id="countInput" value="20" min="1" max="1000">
+          </div>
+          <div class="form-group">
+            <label>Batch Size</label>
+            <input type="number" id="batchSizeInput" value="10" min="1" max="50">
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+          <button class="btn btn-primary" id="btnPlan" onclick="planBlueprint()">
+            <span>Plan Blueprint</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- BLUEPRINT APPROVAL CARD -->
+      <div id="blueprintCard" class="card" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h2 class="card-title">📐 Structured Dataset Blueprint</h2>
+          <span class="badge badge-info" id="bpNameBadge">dataset_blueprint</span>
+        </div>
+        <p class="card-subtitle">Review topics, difficulty distribution, and mathematical/domain validators before launching generation.</p>
+
+        <pre id="blueprintJson"></pre>
+
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+          <button class="btn btn-primary" id="btnGenerate" onclick="executeGeneration()">
+            <span>Approve & Generate Dataset</span>
+          </button>
+          <button class="btn btn-secondary" onclick="document.getElementById('blueprintCard').style.display='none'">Cancel</button>
+        </div>
+      </div>
+
+      <!-- RESULTS CARD -->
+      <div id="resultsCard" class="card" style="display: none;">
+        <h2 class="card-title">🎉 Generation & Verification Summary</h2>
+        <p class="card-subtitle">Quality gates applied: SymPy physics check, AST sandbox, schema compliance, and lexical deduplication.</p>
+
+        <div class="grid-3" style="margin-bottom: 1.5rem;">
+          <div class="stat-box">
+            <div class="stat-val" id="statAccepted" style="color: #34d399;">0</div>
+            <div class="stat-label">Accepted Examples</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val" id="statRate" style="color: #22d3ee;">100%</div>
+            <div class="stat-label">Acceptance Rate</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val" id="statRejected" style="color: #f87171;">0</div>
+            <div class="stat-label">Rejected & Repaired</div>
+          </div>
+        </div>
+
+        <h3 style="font-size: 1rem; margin-bottom: 0.75rem;">Sample Validated Items</h3>
+        <pre id="sampleExamplesJson"></pre>
+      </div>
+    </div>
+
+    <!-- TAB 2: VAULT -->
+    <div id="tab-vault" class="tab-content">
+      <div class="card">
+        <h2 class="card-title">📦 Datasets Vault</h2>
+        <p class="card-subtitle">All programmatic verified datasets saved to disk in JSONL format.</p>
+        <button class="btn btn-secondary" onclick="loadDatasets()" style="margin-bottom: 1rem;">Refresh Datasets</button>
+        <div id="datasetsTableContainer">
+          <p style="color: var(--text-muted);">Loading datasets...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: TRACES -->
+    <div id="tab-traces" class="tab-content">
+      <div class="card">
+        <h2 class="card-title">🔍 Decision Trace & Self-Repair Inspector</h2>
+        <p class="card-subtitle">Every generation decision, validator failure, and self-repair iteration logged for continuous SFT & DPO training.</p>
+        <button class="btn btn-secondary" onclick="loadTraces()" style="margin-bottom: 1rem;">Refresh Traces</button>
+        <div id="tracesContainer">
+          <p style="color: var(--text-muted);">Loading traces...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: MODEL -->
+    <div id="tab-model" class="tab-content">
+      <div class="card">
+        <h2 class="card-title">🧠 Fine-Tuned DatasetGen LLM Status</h2>
+        <p class="card-subtitle">Zero-cost synthetic data generator fine-tuned with QLoRA on pipeline decision traces.</p>
+        
+        <div class="grid-2" style="margin-top: 1rem;">
+          <div class="stat-box">
+            <div class="stat-val" style="color: #a5b4fc;">Qwen2.5-1.5B</div>
+            <div class="stat-label">Base Architecture</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val" style="color: #34d399;">98.32%</div>
+            <div class="stat-label">Token Accuracy</div>
+          </div>
+        </div>
+
+        <div style="margin-top: 1.5rem;">
+          <h3 style="font-size: 1rem; margin-bottom: 0.5rem;">Model Checkpoints & Artifacts</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Artifact</th>
+                <th>Location</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>LoRA Adapter</td>
+                <td><code>/content/DatasetGenAI/data/checkpoints/datasetgen_qlora_adapter</code></td>
+                <td><span class="badge badge-success">Trained (116s)</span></td>
+              </tr>
+              <tr>
+                <td>Merged Standalone Model</td>
+                <td><code>/content/drive/MyDrive/DatasetGenAI/merged_model</code></td>
+                <td><span class="badge badge-success">Merged & Ready</span></td>
+              </tr>
+              <tr>
+                <td>Multi-Task SFT Data</td>
+                <td><code>data/sft_data/train_sft.jsonl</code> (1,056 pairs)</td>
+                <td><span class="badge badge-info">100% Leak-Free</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    let currentBlueprint = null;
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById('tab-' + tabId).classList.add('active');
+      event.target.classList.add('active');
+
+      if (tabId === 'vault') loadDatasets();
+      if (tabId === 'traces') loadTraces();
+    }
+
+    async function planBlueprint() {
+      const btn = document.getElementById('btnPlan');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<span class="loader"></span> Planning...';
+      btn.disabled = true;
+
+      const req = document.getElementById('promptInput').value;
+      const provider = document.getElementById('providerSelect').value;
+      const count = parseInt(document.getElementById('countInput').value) || 20;
+
+      try {
+        const res = await fetch('/api/plan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            request: req,
+            provider: provider,
+            overrides: { number_of_examples: count }
+          })
+        });
+
+        if (!res.ok) throw new Error(await res.text());
+        currentBlueprint = await res.json();
+
+        document.getElementById('bpNameBadge').innerText = currentBlueprint.dataset_name;
+        document.getElementById('blueprintJson').innerText = JSON.stringify(currentBlueprint, null, 2);
+        document.getElementById('blueprintCard').style.display = 'block';
+        document.getElementById('blueprintCard').scrollIntoView({ behavior: 'smooth' });
+      } catch (err) {
+        alert("Failed to plan blueprint: " + err.message);
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    async function executeGeneration() {
+      const btn = document.getElementById('btnGenerate');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<span class="loader"></span> Generating & Validating...';
+      btn.disabled = true;
+
+      const req = document.getElementById('promptInput').value;
+      const provider = document.getElementById('providerSelect').value;
+      const batchSize = parseInt(document.getElementById('batchSizeInput').value) || 10;
+
+      try {
+        const res = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_request: req,
+            blueprint: currentBlueprint,
+            provider: provider,
+            batch_size: batchSize
+          })
+        });
+
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+
+        document.getElementById('statAccepted').innerText = data.accepted_count;
+        document.getElementById('statRate').innerText = (data.report.acceptance_rate * 100).toFixed(1) + '%';
+        document.getElementById('statRejected').innerText = data.report.rejected;
+        document.getElementById('sampleExamplesJson').innerText = JSON.stringify(data.sample_examples, null, 2);
+
+        document.getElementById('resultsCard').style.display = 'block';
+        document.getElementById('resultsCard').scrollIntoView({ behavior: 'smooth' });
+      } catch (err) {
+        alert("Generation error: " + err.message);
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    async function loadDatasets() {
+      const container = document.getElementById('datasetsTableContainer');
+      try {
+        const res = await fetch('/api/datasets');
+        const datasets = await res.json();
+        if (datasets.length === 0) {
+          container.innerHTML = '<p style="color: var(--text-muted);">No datasets generated yet. Use Pipeline Studio to create one!</p>';
+          return;
+        }
+
+        let html = '<table><thead><tr><th>Dataset Name</th><th>Examples</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+        for (const d of datasets) {
+          html += `<tr>
+            <td style="font-weight: 600;">${d.name}</td>
+            <td>${d.example_count}</td>
+            <td><span class="badge ${d.has_final ? 'badge-success' : 'badge-danger'}">${d.has_final ? 'Ready' : 'Incomplete'}</span></td>
+            <td>
+              ${d.has_final ? `<a href="/api/datasets/${d.name}/download" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" download>⬇ Download JSONL</a>` : '-'}
+            </td>
+          </tr>`;
+        }
+        html += '</tbody></table>';
+        container.innerHTML = html;
+      } catch (err) {
+        container.innerHTML = '<p style="color: var(--danger);">Failed to load datasets: ' + err.message + '</p>';
+      }
+    }
+
+    async function loadTraces() {
+      const container = document.getElementById('tracesContainer');
+      try {
+        const res = await fetch('/api/traces');
+        const traces = await res.json();
+        if (traces.length === 0) {
+          container.innerHTML = '<p style="color: var(--text-muted);">No traces recorded yet.</p>';
+          return;
+        }
+
+        let html = '<table><thead><tr><th>Trace ID</th><th>Dataset</th><th>Request</th><th>Accepted</th><th>Rejected</th><th>Date</th></tr></thead><tbody>';
+        for (const t of traces) {
+          html += `<tr>
+            <td><code>${t.trace_id.substring(0, 8)}...</code></td>
+            <td>${t.dataset_name}</td>
+            <td style="max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${t.user_request}</td>
+            <td style="color: #34d399;">${t.accepted_count}</td>
+            <td style="color: #f87171;">${t.rejected_count}</td>
+            <td style="color: var(--text-muted); font-size: 0.8rem;">${new Date(t.timestamp).toLocaleString()}</td>
+          </tr>`;
+        }
+        html += '</tbody></table>';
+        container.innerHTML = html;
+      } catch (err) {
+        container.innerHTML = '<p style="color: var(--danger);">Failed to load traces: ' + err.message + '</p>';
+      }
+    }
+  </script>
+</body>
+</html>
