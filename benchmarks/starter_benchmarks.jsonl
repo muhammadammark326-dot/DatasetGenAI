@@ -1,0 +1,5 @@
+{"id": "bench_phys_01", "domain": "physics", "task_type": "question_answering", "request": "Generate 10 high-school physics questions on mechanics and electricity with numerical solutions in SI units."}
+{"id": "bench_math_02", "domain": "mathematics", "task_type": "question_answering", "request": "Generate 10 algebraic equations with single-variable step-by-step solutions."}
+{"id": "bench_code_03", "domain": "coding", "task_type": "code_generation", "request": "Generate 10 Python algorithm functions with unit test assertion cases."}
+{"id": "bench_class_04", "domain": "classification", "task_type": "classification", "request": "Generate 10 sentiment classification examples categorized as positive or negative."}
+{"id": "bench_qa_05", "domain": "context_qa", "task_type": "reading_comprehension", "request": "Generate 10 reading comprehension passages with grounded questions and factual answers."}

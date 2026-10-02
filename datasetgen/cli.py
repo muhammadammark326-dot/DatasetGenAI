@@ -109,9 +109,40 @@ def run(
 
 
 @app.command()
-def bench() -> None:
-    """Run benchmark evaluation suite across models and categories (Phase 3)."""
-    console.print("[yellow]Benchmark evaluation suite will run in Phase 3.[/yellow]")
+def bench(
+    provider: str = typer.Option("mock", "--provider", "-p", help="Provider name (mock, openai, gemini)"),
+    limit: Optional[int] = typer.Option(None, "--limit", "-l", help="Number of benchmark tasks to run"),
+) -> None:
+    """Run benchmark evaluation suite across models and categories."""
+    from datasetgen.evaluation.benchmark_runner import BenchmarkRunner
+
+    console.print(f"[bold cyan]Running benchmark evaluation suite using provider:[/bold cyan] [green]{provider}[/green]")
+    llm = get_provider(provider)
+    runner = BenchmarkRunner(llm)
+    results = runner.run_all(limit=limit)
+
+    table = Table(title="Benchmark Evaluation Results", show_header=True, header_style="bold magenta")
+    table.add_column("Benchmark ID", style="cyan")
+    table.add_column("Accepted", style="green")
+    table.add_column("Acceptance %", style="yellow")
+    table.add_column("Schema %", style="green")
+    table.add_column("Domain %", style="green")
+    table.add_column("Duplicates %", style="red")
+    table.add_column("Gate Status", style="bold")
+
+    for r in results:
+        status_style = "[bold green]PASSED[/bold green]" if r.passed_quality_gate else "[bold red]FAILED[/bold red]"
+        table.add_row(
+            r.benchmark_id,
+            str(r.total_accepted),
+            f"{r.acceptance_rate*100:.1f}%",
+            f"{r.schema_valid_rate*100:.1f}%",
+            f"{r.domain_valid_rate*100:.1f}%",
+            f"{r.duplicate_rate*100:.1f}%",
+            status_style,
+        )
+    console.print(table)
+    console.print(f"[bold green][OK] Detailed reports generated in:[/bold green] [cyan]{get_settings().benchmark_results_dir}[/cyan]\n")
 
 
 @app.command()
