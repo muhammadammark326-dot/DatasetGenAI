@@ -1,7 +1,7 @@
 """Integration tests for FastAPI server and endpoints."""
 
 from fastapi.testclient import TestClient
-from app.api.server import app
+from datasetgen.app.server import app
 
 client = TestClient(app)
 

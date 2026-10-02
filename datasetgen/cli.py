@@ -232,10 +232,11 @@ def ui(
 ) -> None:
     """Launch the DatasetGen AI Studio interactive web dashboard."""
     import uvicorn
+    from datasetgen.app.server import app as fastapi_app
 
     console.print(f"\n[bold blue]=== Starting DatasetGen AI Studio Web App ===[/bold blue]")
     console.print(f"Server running at: [bold green]http://{host}:{port}[/bold green]\n")
-    uvicorn.run("app.api.server:app", host=host, port=port, reload=False)
+    uvicorn.run(fastapi_app, host=host, port=port)
 
 
 if __name__ == "__main__":
