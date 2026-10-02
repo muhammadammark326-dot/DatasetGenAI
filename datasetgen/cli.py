@@ -180,5 +180,51 @@ def export_sft(
     console.print(f"[bold green][OK] Validation set saved to:[/bold green] [cyan]{val_p}[/cyan]\n")
 
 
+@app.command()
+def export_dpo(
+    train_ratio: float = typer.Option(0.90, "--train-ratio", "-r", help="Fraction of pairs for training split"),
+    seed: int = typer.Option(42, "--seed", "-s", help="Random seed for data shuffling"),
+) -> None:
+    """Export preference pairs (chosen vs rejected) from decision traces for DPO training."""
+    from datasetgen.training.prepare_dpo import DPODataPreparer
+
+    console.print("[bold cyan]Exporting validated traces into DPO preference pairs...[/bold cyan]")
+    preparer = DPODataPreparer()
+    train_p, val_p, summary = preparer.prepare_dataset(train_ratio=train_ratio, seed=seed)
+
+    table = Table(title="DPO Dataset Summary", show_header=True, header_style="bold magenta")
+    table.add_column("Metric", style="cyan")
+    table.add_column("Count", style="green")
+
+    table.add_row("Total Preference Pairs", str(summary["total_pairs"]))
+    table.add_row("Training Split (90%)", str(summary["train_count"]))
+    table.add_row("Validation Split (10%)", str(summary["val_count"]))
+
+    console.print(table)
+    console.print(f"[bold green][OK] DPO Training set saved to:[/bold green] [cyan]{train_p}[/cyan]")
+    console.print(f"[bold green][OK] DPO Validation set saved to:[/bold green] [cyan]{val_p}[/cyan]\n")
+
+
+@app.command()
+def merge(
+    base_model: str = typer.Option("Qwen/Qwen2.5-1.5B-Instruct", "--base-model", "-m", help="Hugging Face base model ID"),
+    adapter: str = typer.Option(..., "--adapter", "-a", help="Path to fine-tuned LoRA adapter"),
+    output: str = typer.Option(..., "--output", "-o", help="Target directory for standalone merged model"),
+    device: str = typer.Option("cpu", "--device", "-d", help="Device for merge operations (cpu or cuda)"),
+) -> None:
+    """Merge LoRA adapter into base model weights for zero-dependency standalone deployment."""
+    from datasetgen.training.merge_adapter import merge_lora_to_standalone
+
+    console.print(f"[bold cyan]Merging LoRA adapter '{adapter}' into '{base_model}'...[/bold cyan]")
+    out_dir = merge_lora_to_standalone(
+        base_model_id=base_model,
+        adapter_path=adapter,
+        output_path=output,
+        device=device,
+    )
+    console.print(f"[bold green][OK] Standalone merged model exported to:[/bold green] [cyan]{out_dir}[/cyan]\n")
+
+
 if __name__ == "__main__":
     app()
+
