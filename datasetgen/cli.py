@@ -25,12 +25,14 @@ console = Console()
 @app.command()
 def plan(
     request: str = typer.Argument(..., help="Natural language dataset request"),
-    provider: str = typer.Option("mock", "--provider", "-p", help="Provider name (mock, openai, gemini)"),
+    provider: str = typer.Option("mock", "--provider", "-p", help="Provider name (mock, openai, gemini, hf_local)"),
+    adapter: Optional[str] = typer.Option(None, "--adapter", "-a", help="Path to fine-tuned LoRA adapter"),
     count: Optional[int] = typer.Option(None, "--count", "-c", help="Override example count"),
 ) -> None:
     """Analyze a request and produce a structured Blueprint."""
     console.print(f"[bold cyan]Planning dataset request:[/bold cyan] '{request}'")
-    llm = get_provider(provider)
+    provider_kwargs = {"adapter_path": adapter} if adapter else {}
+    llm = get_provider(provider, **provider_kwargs)
     pipeline = DatasetPipeline(llm)
 
     overrides = {}
@@ -49,7 +51,8 @@ def plan(
 @app.command()
 def run(
     request: str = typer.Argument(..., help="Natural language dataset request"),
-    provider: str = typer.Option("mock", "--provider", "-p", help="Provider name (mock, openai, gemini)"),
+    provider: str = typer.Option("mock", "--provider", "-p", help="Provider name (mock, openai, gemini, hf_local)"),
+    adapter: Optional[str] = typer.Option(None, "--adapter", "-a", help="Path to fine-tuned LoRA adapter"),
     count: Optional[int] = typer.Option(None, "--count", "-c", help="Override example count"),
     yes: bool = typer.Option(False, "--yes", "-y", help="Skip blueprint confirmation prompt"),
     batch_size: int = typer.Option(20, "--batch-size", "-b", help="Batch generation size"),
@@ -59,7 +62,8 @@ def run(
     console.print(f"\n[bold blue]=== Starting DatasetGen AI Run ===[/bold blue]")
     console.print(f"[dim]Provider:[/dim] [green]{provider}[/green] | [dim]Data Dir:[/dim] [yellow]{settings.data_dir}[/yellow]\n")
 
-    llm = get_provider(provider)
+    provider_kwargs = {"adapter_path": adapter} if adapter else {}
+    llm = get_provider(provider, **provider_kwargs)
     pipeline = DatasetPipeline(llm, batch_size=batch_size)
 
     # 1. Plan
@@ -110,14 +114,16 @@ def run(
 
 @app.command()
 def bench(
-    provider: str = typer.Option("mock", "--provider", "-p", help="Provider name (mock, openai, gemini)"),
+    provider: str = typer.Option("mock", "--provider", "-p", help="Provider name (mock, openai, gemini, hf_local)"),
+    adapter: Optional[str] = typer.Option(None, "--adapter", "-a", help="Path to fine-tuned LoRA adapter"),
     limit: Optional[int] = typer.Option(None, "--limit", "-l", help="Number of benchmark tasks to run"),
 ) -> None:
     """Run benchmark evaluation suite across models and categories."""
     from datasetgen.evaluation.benchmark_runner import BenchmarkRunner
 
     console.print(f"[bold cyan]Running benchmark evaluation suite using provider:[/bold cyan] [green]{provider}[/green]")
-    llm = get_provider(provider)
+    provider_kwargs = {"adapter_path": adapter} if adapter else {}
+    llm = get_provider(provider, **provider_kwargs)
     runner = BenchmarkRunner(llm)
     results = runner.run_all(limit=limit)
 

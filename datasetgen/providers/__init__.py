@@ -2,6 +2,7 @@
 
 from datasetgen.providers.base import LLMProvider, LLMResponse, LLMUsage
 from datasetgen.providers.gemini import GeminiProvider
+from datasetgen.providers.hf_local import HuggingFaceLocalProvider
 from datasetgen.providers.mock import MockProvider
 from datasetgen.providers.openai_compat import OpenAICompatProvider
 
@@ -15,8 +16,10 @@ def get_provider(name: str = "mock", **kwargs) -> LLMProvider:
         return OpenAICompatProvider(**kwargs)
     elif clean_name == "gemini":
         return GeminiProvider(**kwargs)
+    elif clean_name in ("hf_local", "local", "qlora", "huggingface"):
+        return HuggingFaceLocalProvider(**kwargs)
     else:
-        raise ValueError(f"Unknown provider '{name}'. Available: mock, openai, gemini")
+        raise ValueError(f"Unknown provider '{name}'. Available: mock, openai, gemini, hf_local, qlora")
 
 
 __all__ = [
@@ -26,5 +29,7 @@ __all__ = [
     "MockProvider",
     "OpenAICompatProvider",
     "GeminiProvider",
+    "HuggingFaceLocalProvider",
     "get_provider",
 ]
+
