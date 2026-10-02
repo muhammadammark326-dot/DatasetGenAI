@@ -146,9 +146,32 @@ def bench(
 
 
 @app.command()
-def export_sft() -> None:
-    """Export validated traces into SFT training datasets (Phase 4)."""
-    console.print("[yellow]Trace-to-SFT export will run in Phase 4.[/yellow]")
+def export_sft(
+    train_ratio: float = typer.Option(0.90, "--train-ratio", "-r", help="Fraction of records for training split"),
+    seed: int = typer.Option(42, "--seed", "-s", help="Random seed for data shuffling"),
+) -> None:
+    """Export quality-gate-passing traces into SFT training datasets."""
+    from datasetgen.training.prepare_sft import SFTDataPreparer
+
+    console.print("[bold cyan]Exporting validated traces into multi-task SFT training dataset...[/bold cyan]")
+    preparer = SFTDataPreparer()
+    train_p, val_p, summary = preparer.prepare_dataset(train_ratio=train_ratio, seed=seed)
+
+    table = Table(title="SFT Dataset Summary", show_header=True, header_style="bold magenta")
+    table.add_column("Metric / Task", style="cyan")
+    table.add_column("Count", style="green")
+
+    table.add_row("Total SFT Records", str(summary["total_records"]))
+    table.add_row("Training Split (90%)", str(summary["train_count"]))
+    table.add_row("Validation Split (10%)", str(summary["val_count"]))
+    table.add_row("Task: Request -> Blueprint", str(summary["tasks"]["request_to_blueprint"]))
+    table.add_row("Task: Blueprint -> Batch", str(summary["tasks"]["blueprint_to_batch"]))
+    table.add_row("Task: Error Repair", str(summary["tasks"]["error_repair"]))
+    table.add_row("Task: Targeted Generation", str(summary["tasks"]["targeted_generation"]))
+
+    console.print(table)
+    console.print(f"[bold green][OK] Training set saved to:[/bold green] [cyan]{train_p}[/cyan]")
+    console.print(f"[bold green][OK] Validation set saved to:[/bold green] [cyan]{val_p}[/cyan]\n")
 
 
 if __name__ == "__main__":
