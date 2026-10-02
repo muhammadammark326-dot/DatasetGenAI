@@ -1,0 +1,8 @@
+# Google Colab environment configuration
+env: colab
+data_dir: /content/drive/MyDrive/DatasetGenAI
+default_provider: gemini
+batch_size: 25
+max_retries: 3
+cache_enabled: true
+log_level: INFO

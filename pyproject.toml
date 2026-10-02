@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "datasetgen"
+version = "0.1.0"
+description = "Synthetic dataset generation and validation factory with decision traces."
+authors = [{ name = "DatasetGen AI Team" }]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pydantic>=2.7.0",
+    "pydantic-settings>=2.2.0",
+    "python-dotenv>=1.0.0",
+    "pyyaml>=6.0",
+    "typer>=0.12.0",
+    "rich>=13.7.0",
+    "sympy>=1.12",
+    "pint>=0.23",
+    "requests>=2.31.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "ruff>=0.4.0",
+]
+colab = [
+    "torch>=2.1.0",
+    "transformers>=4.40.0",
+    "peft>=0.10.0",
+    "trl>=0.8.0",
+    "bitsandbytes>=0.43.0",
+    "accelerate>=0.29.0",
+    "datasets>=2.18.0",
+]
+
+[project.scripts]
+datasetgen = "datasetgen.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["datasetgen*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B"]
+ignore = ["E501"]

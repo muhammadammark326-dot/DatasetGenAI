@@ -1,0 +1,8 @@
+# Development environment configuration (Windows Local)
+env: development
+data_dir: ./data
+default_provider: mock
+batch_size: 20
+max_retries: 3
+cache_enabled: true
+log_level: INFO

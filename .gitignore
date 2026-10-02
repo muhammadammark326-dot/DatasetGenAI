@@ -1,0 +1,36 @@
+# Environments and Secrets
+.env
+.env.*
+!.env.example
+.venv/
+env/
+venv/
+
+# Data and Artifacts (never commit large datasets or local runs)
+data/
+*.ckpt
+*.safetensors
+*.bin
+*.pt
+*.parquet
+
+# Python cache & artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Notebooks checkpoints and outputs
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/

@@ -1,0 +1,12 @@
+providers:
+  mock:
+    class: datasetgen.providers.mock.MockProvider
+    seed: 42
+    error_rate: 0.15 # Injects ~15% deliberate errors/duplicates to test validators
+  openai:
+    class: datasetgen.providers.openai_compat.OpenAICompatProvider
+    base_url: https://api.openai.com/v1
+    default_model: gpt-4o-mini
+  gemini:
+    class: datasetgen.providers.gemini.GeminiProvider
+    default_model: gemini-1.5-flash
