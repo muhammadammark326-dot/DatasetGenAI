@@ -25,6 +25,22 @@ def run_qlora_training(
     train_file = data_dir / "train_sft.jsonl"
     val_file = data_dir / "val_sft.jsonl"
 
+    # Smart auto-detection of SFT training data across Colab environments
+    if not train_file.exists():
+        candidate_dirs = [
+            Path("/content/data/sft_data"),
+            Path("/content/drive/MyDrive/DatasetGenAI/sft_data"),
+            Path("data/sft_data"),
+            Path("../data/sft_data"),
+            Path("/content/DatasetGenAI/data/sft_data"),
+        ]
+        for d in candidate_dirs:
+            if (d / "train_sft.jsonl").exists():
+                data_dir = d
+                train_file = d / "train_sft.jsonl"
+                val_file = d / "val_sft.jsonl"
+                break
+
     if not train_file.exists():
         raise FileNotFoundError(
             f"SFT training data not found at {train_file}. Run `datasetgen export-sft` first."
